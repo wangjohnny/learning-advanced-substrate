@@ -122,7 +122,7 @@ pub mod pallet {
 			KittyOwner::<T>::insert(kitty_id, &who);
 			KittyParents::<T>::insert(kitty_id, (kitty_id_1, kitty_id_2));
 
-			Self::deposit_event(Event::KittyCreated { who, kitty_id, kitty });
+			Self::deposit_event(Event::KittyBreed { who, kitty_id, kitty });
 
 			Ok(())
 		}

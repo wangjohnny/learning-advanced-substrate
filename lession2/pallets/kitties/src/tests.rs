@@ -1,4 +1,4 @@
-use crate::{mock::*, Error};
+use crate::{mock::*, Error, Event};
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
@@ -25,6 +25,16 @@ fn it_works_for_create() {
             KittiesModule::create(RuntimeOrigin::signed(account_id)),
             Error::<Test>::InvalidKittyId
         );
+		
+        let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
+        let pallet_event: Event<Test> = event_record.event.try_into().unwrap();
+
+        let (tmp_who, tmp_kitty_id, _) = match pallet_event {
+            Event::KittyCreated{who, kitty_id, kitty} => (who, kitty_id, kitty),
+            _ => panic!("unexpected error")
+        };
+        assert_eq!(tmp_kitty_id, kitty_id);
+        assert_eq!(tmp_who, account_id);
     })
 }
 
@@ -63,7 +73,17 @@ fn it_works_for_breed() {
         assert_eq!(
             KittiesModule::kitty_parents(breed_kitty_id),
             Some((kitty_id, kitty_id + 1))
-        )
+        );
+        
+        let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
+        let pallet_event: Event<Test> = event_record.event.try_into().unwrap();
+
+        let (tmp_who, tmp_kitty_id, _) = match pallet_event {
+            Event::KittyBreed{who, kitty_id, kitty} => (who, kitty_id, kitty),
+            _ => panic!("unexpected error")
+        };
+        assert_eq!(tmp_kitty_id, breed_kitty_id);
+        assert_eq!(tmp_who, account_id);
     })
 }
 
@@ -88,6 +108,8 @@ fn it_works_for_transfer() {
             kitty_id,
             recipient
         ));
+
+        System::assert_last_event(Event::KittyTransferred { who: account_id, recipient: recipient, kitty_id: kitty_id }.into());
 
         assert_eq!(KittiesModule::kitty_owner(kitty_id), Some(recipient));
 
